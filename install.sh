@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304131650-git
+##@Version           :  202304131742-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Thursday, Apr 13, 2023 16:50 EDT
+# @@Created          :  Thursday, Apr 13, 2023 17:42 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -19,7 +19,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304131650-git"
+VERSION="202304131742-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -284,6 +284,9 @@ HOST_DOCKER_LINK=""
 # Set listen type - Default all - [all/local/lan/docker/public]
 HOST_NETWORK_ADDR="all"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Set this to the protocol the the container will use - [http/https/git/ftp/pgsql/mysql/mongodb]
+CONTAINER_PROTOCOL="http"
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup nginx proxy variables - [yes/no] [yes/no] [http] [https] [yes/no]
 HOST_NGINX_ENABLED="yes"
 HOST_NGINX_SSL_ENABLED="yes"
@@ -300,28 +303,25 @@ CONTAINER_WEB_SERVER_LISTEN_ON="127.0.0.10"
 CONTAINER_WEB_SERVER_VHOSTS=""
 CONTAINER_WEB_SERVER_CONFIG_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Add service port - [port]
+CONTAINER_SERVICE_PORT="9000"
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Add custom port - [port] or [port:port]
+CONTAINER_ADD_CUSTOM_PORT=""
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Add custom listening ports - [listen:externalPort:internalPort/[tcp,udp]]
+CONTAINER_ADD_CUSTOM_LISTEN=""
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mail settings - [yes/no] [user] [domainname] [server]
 CONTAINER_EMAIL_ENABLED=""
 CONTAINER_EMAIL_USER=""
 CONTAINER_EMAIL_DOMAIN=""
 CONTAINER_EMAIL_RELAY=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Add service port - [port]
-CONTAINER_SERVICE_PORT=""
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Add custom port - [port] or [port:port]
-CONTAINER_ADD_CUSTOM_PORT=""
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Add custom listening ports - [listen:externalPort:internalPort/[tcp,udp]]
-CONTAINER_ADD_CUSTOM_LISTEN="9000,8000"
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Set this to the protocol the the container will use - [http/https/git/ftp/pgsql/mysql/mongodb]
-CONTAINER_PROTOCOL="http"
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Database settings - [listen] [yes/no]
 CONTAINER_DATABASE_LISTEN=""
 CONTAINER_REDIS_ENABLED=""
-CONTAINER_SQLITE3_ENABLED="yes"
+CONTAINER_SQLITE3_ENABLED=""
 CONTAINER_MARIADB_ENABLED=""
 CONTAINER_MONGODB_ENABLED=""
 CONTAINER_COUCHDB_ENABLED=""
@@ -1458,42 +1458,41 @@ if [ -n "$CONTAINER_ADD_CUSTOM_LISTEN" ]; then
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # container web server configuration
-SET_WEB_PORT=""
-NGINX_PROXY_PORT=""
 CLEANUP_PORT="${CONTAINER_WEB_SERVER_INT_PORT:-$CONTAINER_SERVICE_PORT}"
 CLEANUP_PORT="${CLEANUP_PORT//\/*/}"
 PRETTY_PORT="$CLEANUP_PORT"
-if [ "$CONTAINER_WEB_SERVER_ENABLED" = "yes" ]; then
+if [ "$CONTAINER_WEB_SERVER_ENABLED" = "yes" ] && [ -n "$CONTAINER_WEB_SERVER_INT_PORT" ]; then
   CONTAINER_WEB_SERVER_INT_PORT="${CONTAINER_WEB_SERVER_INT_PORT//,/ }"
-  for set_port in $CONTAINER_WEB_SERVER_INT_PORT; do
+  if [ "$CONTAINER_WEB_SERVER_INT_PORT" != " " ]; then
+    port=${CONTAINER_WEB_SERVER_INT_PORT//\/*/}
+    random_port="$(__rport)"
+    SET_WEB_PORT="$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port"
+    DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port")
+  fi
+fi
+if [ -n "$CONTAINER_SERVICE_PORT" ]; then
+  CONTAINER_SERVICE_PORT="${CONTAINER_SERVICE_PORT//,/ }"
+  for set_port in $CONTAINER_SERVICE_PORT; do
     if [ "$set_port" != " " ] && [ -n "$set_port" ]; then
       port=${set_port//\/*/}
       random_port="$(__rport)"
-      TYPE="$(echo "$port" | grep '/' | awk -F '/' '{print $NF}' | head -n1 | grep '^' || echo '')"
+      TYPE="$(echo "$set_port" | grep '/' | awk -F '/' '{print $NF}' | head -n1 | grep '^' || echo '')"
       if [ -z "$TYPE" ]; then
         DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port")
       else
         DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port/$TYPE")
       fi
-      SET_WEB_PORT+="$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port "
     fi
   done
-  set_port=""
-  if [ -n "$SET_WEB_PORT" ]; then
-    SET_NGINX_PROXY_PORT="$(echo "$SET_WEB_PORT" | tr ' ' '\n' | awk -F':' '{print $1":"$2}' | grep -v '^$' | tr '\n' ' ' | head -n1 | grep '^')"
-  fi
-  if [ -n "$SET_WEB_PORT" ]; then
-    CLEANUP_PORT="${SET_NGINX_PROXY_PORT//--publish /}"
-    CLEANUP_PORT="${CLEANUP_PORT//\/*/}"
-  fi
-  if [ -n "$SET_WEB_PORT" ]; then
-    PRETTY_PORT="$CLEANUP_PORT"
-    NGINX_PROXY_PORT="$CLEANUP_PORT"
-  fi
-  if [ -n "$SET_NGINX_PROXY_PORT" ]; then
-    NGINX_PROXY_PORT="$SET_NGINX_PROXY_PORT"
-  fi
 fi
+if [ -n "$SET_WEB_PORT" ]; then
+  SET_NGINX_PROXY_PORT="$(echo "$SET_WEB_PORT" | tr ' ' '\n' | awk -F':' '{print $1":"$2}' | grep -v '^$' | tr '\n' ' ' | head -n1 | grep '^')"
+  CLEANUP_PORT="${SET_NGINX_PROXY_PORT//--publish /}"
+  CLEANUP_PORT="${CLEANUP_PORT//\/*/}"
+  PRETTY_PORT="$CLEANUP_PORT"
+  NGINX_PROXY_PORT="$CLEANUP_PORT"
+fi
+unset SET_WEB_PORT_TMP set_port CONTAINER_SERVICE_PORT
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Fix/create port
 if echo "$PRETTY_PORT" | grep -q ':.*.:'; then
