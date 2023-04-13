@@ -310,10 +310,10 @@ CONTAINER_EMAIL_RELAY=""
 CONTAINER_SERVICE_PORT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom port - [port] or [port:port]
-CONTAINER_ADD_CUSTOM_PORT="9000,8000"
+CONTAINER_ADD_CUSTOM_PORT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom listening ports - [listen:externalPort:internalPort/[tcp,udp]]
-CONTAINER_ADD_CUSTOM_LISTEN=""
+CONTAINER_ADD_CUSTOM_LISTEN="9000,8000"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set this to the protocol the the container will use - [http/https/git/ftp/pgsql/mysql/mongodb]
 CONTAINER_PROTOCOL="http"
