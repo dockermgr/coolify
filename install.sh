@@ -250,7 +250,7 @@ HOST_ETC_HOSTS_ENABLED="yes"
 HOST_ETC_HOSTS_MOUNT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount docker socket - [yes/no] [/var/run/docker.sock]
-DOCKER_SOCKET_ENABLED="yes"
+DOCKER_SOCKET_ENABLED="no"
 DOCKER_SOCKET_MOUNT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount docker config - [yes/no] [~/.docker/config.json] [/root/.docker/config.json]
@@ -307,10 +307,10 @@ CONTAINER_EMAIL_DOMAIN=""
 CONTAINER_EMAIL_RELAY=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add service port - [port]
-CONTAINER_SERVICE_PORT="9000"
+CONTAINER_SERVICE_PORT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom port - [port] or [port:port]
-CONTAINER_ADD_CUSTOM_PORT=""
+CONTAINER_ADD_CUSTOM_PORT="9000,8000"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom listening ports - [listen:externalPort:internalPort/[tcp,udp]]
 CONTAINER_ADD_CUSTOM_LISTEN=""
