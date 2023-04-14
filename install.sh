@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304140117-git
+##@Version           :  202304140121-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Friday, Apr 14, 2023 01:17 EDT
+# @@Created          :  Friday, Apr 14, 2023 01:21 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -19,7 +19,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304140117-git"
+VERSION="202304140121-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -1678,7 +1678,7 @@ __docker_ps && CONTAINER_INSTALLED="true"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Install nginx proxy
 NINGX_VHOSTS_WRITABLE="$(sudoif && sudo bash -c '[ -w "$NGINX_DIR/vhosts.d" ] && echo "true" || false' || echo 'false')"
-if [ "$NINGX_VHOSTS_WRITABLE" = "true" ] && [ -f "$NGINX_CONF_FILE" ]; then
+if [ "$NINGX_VHOSTS_WRITABLE" = "true" ]; then
   NGINX_VHOST_ENABLED="true"
   NGINX_VHOST_NAMES="${CONTAINER_WEB_SERVER_VHOSTS//,/ }"
   NGINX_CONFIG_NAME="${CONTAINER_WEB_SERVER_CONFIG_NAME:-$CONTAINER_HOSTNAME}"
