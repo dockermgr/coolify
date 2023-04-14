@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304132232-git
+##@Version           :  202304132303-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Thursday, Apr 13, 2023 22:32 EDT
+# @@Created          :  Thursday, Apr 13, 2023 23:03 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -19,7 +19,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304132232-git"
+VERSION="202304132303-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -321,7 +321,7 @@ CONTAINER_EMAIL_RELAY=""
 # Database settings - [listen] [yes/no]
 CONTAINER_DATABASE_LISTEN=""
 CONTAINER_REDIS_ENABLED=""
-CONTAINER_SQLITE3_ENABLED=""
+CONTAINER_SQLITE3_ENABLED="yes"
 CONTAINER_MARIADB_ENABLED=""
 CONTAINER_MONGODB_ENABLED=""
 CONTAINER_COUCHDB_ENABLED=""
@@ -1505,7 +1505,9 @@ if [ -n "$CONTAINER_SERVICE_PORT" ]; then
     fi
   done
 fi
+unset SET_WEB_PORT_TMP set_port
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Fix/create port
 SET_WEB_PORT="${SET_WEB_PORT_TMP[*]}"
 if [ -n "$SET_WEB_PORT" ]; then
   SET_NGINX_PROXY_PORT="$(echo "$SET_WEB_PORT" | tr ' ' '\n' | awk -F':' '{print $1":"$2}' | grep -v '^$' | tr '\n' ' ' | head -n1 | grep '^')"
@@ -1514,19 +1516,16 @@ if [ -n "$SET_WEB_PORT" ]; then
   PRETTY_PORT="$CLEANUP_PORT"
   NGINX_PROXY_PORT="$CLEANUP_PORT"
 fi
-unset SET_WEB_PORT_TMP set_port
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Fix/create port
-if echo "$PRETTY_PORT" | grep -q ':.*.:'; then
-  NGINX_PROXY_PORT="$(echo "$PRETTY_PORT" | grep ':.*.:' | awk -F':' '{print $2}' | grep '^')"
-else
-  NGINX_PROXY_PORT="$(echo "$PRETTY_PORT" | grep -v ':.*.:' | awk -F':' '{print $2}' | grep '^')"
-fi
-if [ -n "$NGINX_PROXY_PORT" ]; then
-  PRETTY_PORT="$NGINX_PROXY_PORT"
-else
-  NGINX_PROXY_PORT="$CLEANUP_PORT"
-fi
+# if echo "$PRETTY_PORT" | grep -q ':.*.:'; then
+# NGINX_PROXY_PORT="$(echo "$PRETTY_PORT" | grep ':.*.:' | awk -F':' '{print $2}' | grep '^')"
+# else
+# NGINX_PROXY_PORT="$(echo "$PRETTY_PORT" | grep -v ':.*.:' | awk -F':' '{print $2}' | grep '^')"
+# fi
+# if [ -n "$NGINX_PROXY_PORT" ]; then
+# PRETTY_PORT="$NGINX_PROXY_PORT"
+# else
+# NGINX_PROXY_PORT="$CLEANUP_PORT"
+# fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 NGINX_PROXY_URL="${NGINX_PROXY_URL:-$PROXY_HTTP_PROTO://$NGINX_PROXY_ADDRESS:$NGINX_PROXY_PORT}"
 NGINX_PROXY_URL="${NGINX_PROXY_URL// /}"
@@ -1639,6 +1638,7 @@ fi
 DOCKERMGR_INSTALL_SCRIPT="$DOCKERMGR_CONFIG_DIR/scripts/$CONTAINER_NAME.sh"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # setup the container
+EXECUTE_DOCKER_CMD="$(__trim "${EXECUTE_DOCKER_CMD[*]}")"
 if cmd_exists docker-compose && [ -f "$INSTDIR/docker-compose.yml" ]; then
   printf_yellow "Installing containers using docker-compose"
   sed -i 's|REPLACE_DATADIR|'$DATADIR'' "$INSTDIR/docker-compose.yml" &>/dev/null
@@ -1663,11 +1663,11 @@ if [ -n "$EXECUTE_DOCKER_SCRIPT" ]; then
 #!/usr/bin/env bash
 # Install script for $CONTAINER_NAME
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-$EXECUTE_PRE_INSTALL || { echo "Failed to execute pre-install" && exit 1; }
+$EXECUTE_PRE_INSTALL
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 $EXECUTE_DOCKER_CMD || { echo "Failed to execute install script" && exit 1; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-docker ps -a 2>&1 | grep -q "$CONTAINER_NAME"|| { echo "$CONTAINER_NAME ist not running" && exit 1; }
+docker ps -a 2>&1 | grep -q "$CONTAINER_NAME" || { echo "$CONTAINER_NAME ist not running" && exit 1; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 exit 0
 # end script
@@ -1836,6 +1836,10 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps; then
         fi
       fi
     done
+    printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
+  fi
+  if [ -f "$DOCKERMGR_INSTALL_SCRIPT" ]; then
+    printf_yellow "Script saved to:                 $DOCKERMGR_INSTALL_SCRIPT"
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   fi
   if [ -f "$DOCKERMGR_CONFIG_DIR/env/$APPNAME" ] || [ -f "$DOCKERMGR_CONFIG_DIR/env/custom.$APPNAME" ]; then
