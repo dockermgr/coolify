@@ -1495,7 +1495,7 @@ if [ -n "$SET_WEB_PORT" ]; then
   PRETTY_PORT="$CLEANUP_PORT"
   NGINX_PROXY_PORT="$CLEANUP_PORT"
 fi
-unset SET_WEB_PORT_TMP set_port CONTAINER_SERVICE_PORT
+unset SET_WEB_PORT_TMP set_port
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Fix/create port
 if echo "$PRETTY_PORT" | grep -q ':.*.:'; then
