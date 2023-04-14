@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304132128-git
+##@Version           :  202304132216-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Thursday, Apr 13, 2023 21:28 EDT
+# @@Created          :  Thursday, Apr 13, 2023 22:16 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -19,7 +19,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304132128-git"
+VERSION="202304132216-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -321,7 +321,7 @@ CONTAINER_EMAIL_RELAY=""
 # Database settings - [listen] [yes/no]
 CONTAINER_DATABASE_LISTEN=""
 CONTAINER_REDIS_ENABLED=""
-CONTAINER_SQLITE3_ENABLED="yes"
+CONTAINER_SQLITE3_ENABLED=""
 CONTAINER_MARIADB_ENABLED=""
 CONTAINER_MONGODB_ENABLED=""
 CONTAINER_COUCHDB_ENABLED=""
@@ -405,6 +405,9 @@ CONTAINER_CREATE_DIRECTORY+=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Show post install message
 POST_SHOW_FINISHED_MESSAGE=""
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Run the script if it exists [yes/no]
+DOCKERMGR_ENABLE_INSTALL_SCRIPT="yes"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set custom container enviroment variables - [--env MYVAR="VAR"]
 __custom_docker_env() {
@@ -735,8 +738,10 @@ DOCKER_CAP_NET_RAW="${ENV_DOCKER_CAP_NET_RAW:-$DOCKER_CAP_NET_RAW}"
 DOCKER_CAP_SYS_NICE="${ENV_DOCKER_CAP_SYS_NICE:-$DOCKER_CAP_SYS_NICE}"
 DOCKER_CAP_NET_ADMIN="${ENV_DOCKER_CAP_NET_ADMIN:-$DOCKER_CAP_NET_ADMIN}"
 DOCKER_CAP_NET_BIND_SERVICE="${ENV_DOCKER_CAP_NET_BIND_SERVICE:-$DOCKER_CAP_NET_BIND_SERVICE}"
+DOCKERMGR_ENABLE_INSTALL_SCRIPT="${SCRIPT_ENABLED:-$DOCKERMGR_ENABLE_INSTALL_SCRIPT}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup arrays
+SET_WEB_PORT_TMP=()
 SET_CAPABILITIES=()
 DOCKER_SET_OPTIONS=()
 DOCKER_SET_TMP_PUBLISH=()
@@ -1420,18 +1425,15 @@ if [ -n "$CONTAINER_OPT_PORT_VAR" ]; then
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup ports
-PRETTY_PORT=""
-SET_WEB_PORT_TMP=()
-SET_LISTEN="${HOST_DEFINE_LISTEN//:*/}"
-SET_ADDR="${HOST_LISTEN_ADDR:-127.0.0.1}"
-CONTAINER_WEB_SERVER_LISTEN_ON="${CONTAINER_WEB_SERVER_LISTEN_ON:-}"
 if [ -n "$SET_SERVER_PORTS" ]; then
+  SET_LISTEN="${HOST_DEFINE_LISTEN//:*/}"
   for set_port in $SET_SERVER_PORTS; do
     if [ "$set_port" != " " ] && [ -n "$set_port" ]; then
       port=$set_port
       echo "$port" | grep -q ':.*.:' || random_port="$(__rport)"
       echo "$port" | grep -q ':' || port="${random_port:-$port//\/*/}:$port"
       if [ "$CONTAINER_PRIVATE" = "yes" ] && [ "$port" = "${IS_PRIVATE//\/*/}" ]; then
+        SET_ADDR="${HOST_LISTEN_ADDR:-127.0.0.1}"
         DOCKER_SET_TMP_PUBLISH+=("--publish $SET_ADDR:$port")
       elif [ -n "$SET_LISTEN" ]; then
         DOCKER_SET_TMP_PUBLISH+=("--publish $SET_LISTEN:$port")
@@ -1461,20 +1463,21 @@ if [ -n "$CONTAINER_ADD_CUSTOM_LISTEN" ]; then
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # container web server configuration
+PRETTY_PORT=""
 if [ "$CONTAINER_WEB_SERVER_ENABLED" = "yes" ] && [ -n "$CONTAINER_WEB_SERVER_INT_PORT" ]; then
-  TYPE=""
   CONTAINER_WEB_SERVER_INT_PORT="${CONTAINER_WEB_SERVER_INT_PORT//,/ }"
   for set_port in $CONTAINER_WEB_SERVER_INT_PORT; do
     if [ "$set_port" != " " ] && [ -n "$set_port" ]; then
-      port=${set_port//\/*/}
-      random_port="$(__rport)"
-      SET_WEB_PORT_TMP+=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
-      DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port")
+      if [ "$set_port" != " " ]; then
+        port=${set_port//\/*/}
+        random_port="$(__rport)"
+        SET_WEB_PORT_TMP=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
+        DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port")
+      fi
     fi
   done
 fi
 if [ -n "$CONTAINER_SERVICE_PORT" ]; then
-  TYPE=""
   CONTAINER_SERVICE_PORT="${CONTAINER_SERVICE_PORT//,/ }"
   for set_port in $CONTAINER_SERVICE_PORT; do
     if [ "$set_port" != " " ] && [ -n "$set_port" ]; then
@@ -1486,7 +1489,7 @@ if [ -n "$CONTAINER_SERVICE_PORT" ]; then
       else
         DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port/$TYPE")
       fi
-      SET_WEB_PORT_TMP+=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
+      SET_WEB_PORT_TMP=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
     fi
   done
 fi
@@ -1620,6 +1623,7 @@ else
   __sudo chown -f "$SUDO_USER":"$SUDO_USER" "$DATADIR" "$INSTDIR" "$INSTDIR" &>/dev/null
   __sudo date +'installed on %Y-%m-%d at %H:%M' | tee "$DATADIR/.installed" &>/dev/null
 fi
+DOCKERMGR_INSTALL_SCRIPT="$DOCKERMGR_CONFIG_DIR/scripts/$CONTAINER_NAME.sh"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # setup the container
 if cmd_exists docker-compose && [ -f "$INSTDIR/docker-compose.yml" ]; then
@@ -1630,8 +1634,8 @@ if cmd_exists docker-compose && [ -f "$INSTDIR/docker-compose.yml" ]; then
     __sudo docker-compose pull &>/dev/null
     __sudo docker-compose up -d &>/dev/null
   fi
-elif [ -f "$DOCKERMGR_CONFIG_DIR/scripts/$CONTAINER_NAME" ]; then
-  EXECUTE_DOCKER_SCRIPT="$DOCKERMGR_CONFIG_DIR/scripts/$CONTAINER_NAME"
+elif [ -f "$DOCKERMGR_INSTALL_SCRIPT" ] && [ "$DOCKERMGR_ENABLE_INSTALL_SCRIPT" = "yes" ]; then
+  EXECUTE_DOCKER_SCRIPT="$DOCKERMGR_INSTALL_SCRIPT"
 else
   EXECUTE_DOCKER_ENABLE="yes"
   EXECUTE_DOCKER_SCRIPT="$EXECUTE_DOCKER_CMD"
@@ -1642,16 +1646,21 @@ if [ -n "$EXECUTE_DOCKER_SCRIPT" ]; then
   __sudo docker pull "$HUB_IMAGE_URL" 1>/dev/null 2>"${TMP:-/tmp}/$APPNAME.err.log"
   printf_cyan "Creating container $CONTAINER_NAME"
   if [ "$EXECUTE_DOCKER_ENABLE" = "yes" ]; then
-    cat <<EOF >"$DOCKERMGR_CONFIG_DIR/scripts/$CONTAINER_NAME"
+    cat <<EOF >"$DOCKERMGR_INSTALL_SCRIPT"
 #!/usr/bin/env bash
 # Install script for $CONTAINER_NAME
-
-$EXECUTE_PRE_INSTALL
-$EXECUTE_DOCKER_CMD && docker ps -a 2>&1 | grep -q "$CONTAINER_NAME"
-exit \$?
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+$EXECUTE_PRE_INSTALL || { echo "Failed to execute pre-install" && exit 1; }
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+$EXECUTE_DOCKER_CMD || { echo "Failed to execute install script" && exit 1; }
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+docker ps -a 2>&1 | grep -q "$CONTAINER_NAME"|| { echo "$CONTAINER_NAME ist not running" && exit 1; }
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+exit 0
+# end script
 
 EOF
-    [ -f "$DOCKERMGR_CONFIG_DIR/scripts/$CONTAINER_NAME" ] && chmod -Rf 755 "$DOCKERMGR_CONFIG_DIR/scripts/$CONTAINER_NAME"
+    [ -f "$DOCKERMGR_INSTALL_SCRIPT" ] && chmod -Rf 755 "$DOCKERMGR_INSTALL_SCRIPT"
   fi
   if __sudo ${EXECUTE_DOCKER_CMD} 1>/dev/null 2>"${TMP:-/tmp}/$APPNAME.err.log"; then
     rm -Rf "${TMP:-/tmp}/$APPNAME.err.log"
@@ -1664,7 +1673,7 @@ sleep 10
 __docker_ps && CONTAINER_INSTALLED="true"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Install nginx proxy
-if [ -w "$NGINX_DIR/vhosts.d" ]; then
+if [ -w "$NGINX_DIR/vhosts.d" ] && [ -f "$NGINX_CONF_FILE" ]; then
   NGINX_VHOST_ENABLED="true"
   NGINX_VHOST_NAMES="${CONTAINER_WEB_SERVER_VHOSTS//,/ }"
   NGINX_CONFIG_NAME="${CONTAINER_WEB_SERVER_CONFIG_NAME:-$CONTAINER_HOSTNAME}"
@@ -1678,8 +1687,13 @@ if [ -w "$NGINX_DIR/vhosts.d" ]; then
     sed -i "s|REPLACE_SERVER_LISTEN_OPTS|$NGINX_LISTEN_OPTS|g" "/tmp/$$.$CONTAINER_HOSTNAME.conf" &>/dev/null
     if [ -d "$NGINX_DIR/vhosts.d" ]; then
       __sudo_root mv -f "/tmp/$$.$CONTAINER_HOSTNAME.conf" "$NGINX_DIR/vhosts.d/$NGINX_CONFIG_NAME.conf"
-      [ -f "$NGINX_DIR/vhosts.d/$NGINX_CONFIG_NAME.conf" ] && NGINX_IS_INSTALLED="yes" && NGINX_CONF_FILE="$NGINX_DIR/vhosts.d/$NGINX_CONFIG_NAME.conf"
-      systemctl status nginx | grep -q enabled &>/dev/null && __sudo_root systemctl reload nginx &>/dev/null
+      if [ -f "$NGINX_DIR/vhosts.d/$NGINX_CONFIG_NAME.conf" ]; then
+        NGINX_IS_INSTALLED="yes"
+        NGINX_CONF_FILE="$NGINX_DIR/vhosts.d/$NGINX_CONFIG_NAME.conf"
+      fi
+      if [ -f "/etc/nginx/nginx.conf" ]; then
+        systemctl status nginx | grep -q enabled &>/dev/null && __sudo_root systemctl reload nginx &>/dev/null
+      fi
     else
       mv -f "/tmp/$$.$CONTAINER_HOSTNAME.conf" "$INSTDIR/nginx/$NGINX_CONFIG_NAME.conf" &>/dev/null
     fi
@@ -1785,9 +1799,47 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps; then
     printf_purple "htpasswd File:                   /config/auth/htpasswd"
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   fi
+  if [ -z "$SET_PORT" ]; then
+    printf_yellow "This container does not have services configured"
+    printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
+  else
+    for service in $SET_PORT; do
+      if [ "$service" != "--publish" ] && [ "$service" != " " ] && [ -n "$service" ]; then
+        get_type="${service//*\//}"
+        get_type="${get_type//$service/}"
+        type=${get_type//*\//}
+        service=${service//\/*/}
+        set_listen=${service%:*}
+        set_service=${service//*:*[^:]*:/}
+        listen_ip=${set_listen//0.0.0.0/$HOST_LISTEN_ADDR}
+        listen=${listen_ip//*^:/$listen_ip}
+        echo "$listen" | grep -q ":" || listen="$listen_ip"
+        if [ -n "$listen" ]; then
+          if [ -n "$type" ]; then
+            printf_cyan "Port ${set_service//*:/} is mapped to:           $listen/$type"
+          else
+            printf_cyan "Port ${set_service//*:/} is mapped to:           $listen"
+          fi
+        fi
+      fi
+    done
+    printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
+  fi
+  if [ -f "$DOCKERMGR_CONFIG_DIR/env/$APPNAME" ] || [ -f "$DOCKERMGR_CONFIG_DIR/env/custom.$APPNAME" ]; then
+    if [ -f "$DOCKERMGR_CONFIG_DIR/env/$APPNAME" ]; then
+      printf_green "variables saved to:              $DOCKERMGR_CONFIG_DIR/env/$APPNAME"
+    fi
+    if [ -f "$DOCKERMGR_CONFIG_DIR/env/custom.$APPNAME" ]; then
+      printf_green "Container variables saved to:    $DOCKERMGR_CONFIG_DIR/env/custom.$APPNAME"
+    fi
+    printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
+  fi
   if [ -n "$POST_SHOW_FINISHED_MESSAGE" ]; then
     printf_green "$POST_SHOW_FINISHED_MESSAGE"
+    printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   fi
+  printf_cyan "$APPNAME has been installed to:   $INSTDIR"
+  printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n\n'
   __show_post_message
 else
   printf_cyan "The container $CONTAINER_NAME seems to have failed"
@@ -1796,50 +1848,11 @@ else
   else
     printf_red "Something seems to have gone wrong with the install"
   fi
-  if [ -f "$DOCKERMGR_CONFIG_DIR/scripts/$CONTAINER_NAME" ]; then
-    printf_yellow "Script: $DOCKERMGR_CONFIG_DIR/scripts/$CONTAINER_NAME"
+  if [ -f "$DOCKERMGR_INSTALL_SCRIPT" ]; then
+    printf_yellow "Script: $DOCKERMGR_INSTALL_SCRIPT"
   fi
   exit 10
 fi
-if [ -z "$SET_PORT" ]; then
-  printf_yellow "This container does not have services configured"
-else
-  printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
-  for service in $SET_PORT; do
-    if [ "$service" != "--publish" ] && [ "$service" != " " ] && [ -n "$service" ]; then
-      get_type="${service//*\//}"
-      get_type="${get_type//$service/}"
-      type=${get_type//*\//}
-      service=${service//\/*/}
-      set_listen=${service%:*}
-      set_service=${service//*:*[^:]*:/}
-      listen_ip=${set_listen//0.0.0.0/$HOST_LISTEN_ADDR}
-      listen=${listen_ip//*^:/$listen_ip}
-      echo "$listen" | grep -q ":" || listen="$listen_ip"
-      if [ -n "$listen" ]; then
-        if [ -n "$type" ]; then
-          printf_cyan "Port ${set_service//*:/} is mapped to:           $listen/$type"
-        else
-          printf_cyan "Port ${set_service//*:/} is mapped to:           $listen"
-        fi
-      fi
-    fi
-  done
-fi
-if [ "$MESSAGE" = "true" ]; then
-  printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
-fi
-if [ -f "$DOCKERMGR_CONFIG_DIR/env/$APPNAME" ] || [ -f "$DOCKERMGR_CONFIG_DIR/env/custom.$APPNAME" ]; then
-  if [ -f "$DOCKERMGR_CONFIG_DIR/env/$APPNAME" ]; then
-    printf_green "variables saved to:              $DOCKERMGR_CONFIG_DIR/env/$APPNAME"
-  fi
-  if [ -f "$DOCKERMGR_CONFIG_DIR/env/custom.$APPNAME" ]; then
-    printf_green "Container variables saved to:    $DOCKERMGR_CONFIG_DIR/env/custom.$APPNAME"
-  fi
-  printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
-fi
-printf_cyan "$APPNAME has been installed to:   $INSTDIR"
-printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n\n'
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # run post install scripts
 run_postinst() {
