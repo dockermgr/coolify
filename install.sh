@@ -1420,15 +1420,18 @@ if [ -n "$CONTAINER_OPT_PORT_VAR" ]; then
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup ports
+PRETTY_PORT=""
+SET_WEB_PORT_TMP=()
+SET_LISTEN="${HOST_DEFINE_LISTEN//:*/}"
+SET_ADDR="${HOST_LISTEN_ADDR:-127.0.0.1}"
+CONTAINER_WEB_SERVER_LISTEN_ON="${CONTAINER_WEB_SERVER_LISTEN_ON:-}"
 if [ -n "$SET_SERVER_PORTS" ]; then
-  SET_LISTEN="${HOST_DEFINE_LISTEN//:*/}"
   for set_port in $SET_SERVER_PORTS; do
     if [ "$set_port" != " " ] && [ -n "$set_port" ]; then
       port=$set_port
       echo "$port" | grep -q ':.*.:' || random_port="$(__rport)"
       echo "$port" | grep -q ':' || port="${random_port:-$port//\/*/}:$port"
       if [ "$CONTAINER_PRIVATE" = "yes" ] && [ "$port" = "${IS_PRIVATE//\/*/}" ]; then
-        SET_ADDR="${HOST_LISTEN_ADDR:-127.0.0.1}"
         DOCKER_SET_TMP_PUBLISH+=("--publish $SET_ADDR:$port")
       elif [ -n "$SET_LISTEN" ]; then
         DOCKER_SET_TMP_PUBLISH+=("--publish $SET_LISTEN:$port")
@@ -1458,22 +1461,20 @@ if [ -n "$CONTAINER_ADD_CUSTOM_LISTEN" ]; then
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # container web server configuration
-PRETTY_PORT=""
-SET_WEB_PORT_TMP=()
 if [ "$CONTAINER_WEB_SERVER_ENABLED" = "yes" ] && [ -n "$CONTAINER_WEB_SERVER_INT_PORT" ]; then
+  TYPE=""
   CONTAINER_WEB_SERVER_INT_PORT="${CONTAINER_WEB_SERVER_INT_PORT//,/ }"
   for set_port in $CONTAINER_WEB_SERVER_INT_PORT; do
     if [ "$set_port" != " " ] && [ -n "$set_port" ]; then
-      if [ "$set_port" != " " ]; then
-        port=${set_port//\/*/}
-        random_port="$(__rport)"
-        SET_WEB_PORT_TMP=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
-        DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port")
-      fi
+      port=${set_port//\/*/}
+      random_port="$(__rport)"
+      SET_WEB_PORT_TMP+=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
+      DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port")
     fi
   done
 fi
 if [ -n "$CONTAINER_SERVICE_PORT" ]; then
+  TYPE=""
   CONTAINER_SERVICE_PORT="${CONTAINER_SERVICE_PORT//,/ }"
   for set_port in $CONTAINER_SERVICE_PORT; do
     if [ "$set_port" != " " ] && [ -n "$set_port" ]; then
@@ -1485,7 +1486,7 @@ if [ -n "$CONTAINER_SERVICE_PORT" ]; then
       else
         DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port/$TYPE")
       fi
-      SET_WEB_PORT_TMP=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
+      SET_WEB_PORT_TMP+=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
     fi
   done
 fi
