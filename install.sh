@@ -297,7 +297,7 @@ HOST_NGINX_HTTPS_PORT="443"
 HOST_NGINX_UPDATE_CONF="yes"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Enable this if container is running a webserver - [yes/no] [internalPort] [yes/no] [yes/no] [listen]
-CONTAINER_WEB_SERVER_ENABLED="no"
+CONTAINER_WEB_SERVER_ENABLED="yes"
 CONTAINER_WEB_SERVER_INT_PORT="3000"
 CONTAINER_WEB_SERVER_SSL_ENABLED="no"
 CONTAINER_WEB_SERVER_AUTH_ENABLED="no"
@@ -319,7 +319,7 @@ CONTAINER_EMAIL_RELAY=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Database settings - [listen] [yes/no]
 CONTAINER_DATABASE_LISTEN=""
-CONTAINER_REDIS_ENABLED=""
+CONTAINER_REDIS_ENABLED="yes"
 CONTAINER_SQLITE3_ENABLED=""
 CONTAINER_MARIADB_ENABLED=""
 CONTAINER_MONGODB_ENABLED=""
