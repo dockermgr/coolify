@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304140946-git
+##@Version           :  202304141000-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Friday, Apr 14, 2023 09:46 EDT
+# @@Created          :  Friday, Apr 14, 2023 10:00 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -19,7 +19,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304140946-git"
+VERSION="202304141000-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -320,7 +320,7 @@ CONTAINER_EMAIL_RELAY=""
 # Database settings - [listen] [yes/no]
 CONTAINER_DATABASE_LISTEN=""
 CONTAINER_REDIS_ENABLED=""
-CONTAINER_SQLITE3_ENABLED=""
+CONTAINER_SQLITE3_ENABLED="yes"
 CONTAINER_MARIADB_ENABLED=""
 CONTAINER_MONGODB_ENABLED=""
 CONTAINER_COUCHDB_ENABLED=""
@@ -1685,23 +1685,22 @@ if [ "$NINGX_VHOSTS_WRITABLE" = "true" ]; then
     sed -i "s|REPLACE_SERVER_LISTEN_OPTS|$NGINX_LISTEN_OPTS|g" "$NGINX_VHOSTS_CONF_FILE_TMP" &>/dev/null
     if [ -d "$NGINX_DIR/vhosts.d" ]; then
       if [ -f "$NGINX_VHOSTS_INC_FILE_TMP" ]; then
+        sed -i "s|REPLACE_NGINX_INCLUDE|$NGINX_INC_CONFIG|g" "$NGINX_VHOSTS_CONF_FILE_TMP"
         __sudo_root mv -f "$NGINX_VHOSTS_INC_FILE_TMP" "$NGINX_INC_CONFIG"
-        sed -i "s|REPLACREPLACE_NGINX_INCLUDEE_INCLUDE|$NGINX_INC_CONFIG|g" "$NGINX_VHOSTS_CONF_FILE_TMP"
       elif [ -f "$INSTDIR/nginx/conf.d/vhosts/include.conf" ]; then
         cat "$INSTDIR/nginx/conf.d/vhosts/include.conf" | tee "$NGINX_VHOSTS_INC_FILE_TMP" &>/dev/null
-        __sudo_root mv -f "$NGINX_VHOSTS_INC_FILE_TMP" "$NGINX_INC_CONFIG"
         sed -i "s|REPLACE_NGINX_INCLUDE|$NGINX_INC_CONFIG|g" "$NGINX_VHOSTS_CONF_FILE_TMP"
+        __sudo_root mv -f "$NGINX_VHOSTS_INC_FILE_TMP" "$NGINX_INC_CONFIG"
       fi
       if [ ! -f "$NGINX_INC_CONFIG" ]; then
         sed -i "s|include.*REPLACE_NGINX_INCLUDE;||g" "$NGINX_VHOSTS_CONF_FILE_TMP"
       fi
-      __sudo_root mv -f "$NGINX_VHOSTS_CONF_FILE_TMP" "$NGINX_MAIN_CONFIG"
       if [ -f "$NGINX_MAIN_CONFIG" ]; then
         NGINX_IS_INSTALLED="yes"
         NGINX_CONF_FILE="$NGINX_MAIN_CONFIG"
       fi
       if [ -f "/etc/nginx/nginx.conf" ]; then
-        systemctl status nginx 2>/dev/null | grep -q enabled &>/dev/null && __sudo_root systemctl reload nginx &>/dev/null
+        systemctl status nginx 2>/dev/null | grep -q enabled &>/dev/null && __sudo systemctl reload nginx &>/dev/null
       fi
     else
       mv -f "$NGINX_VHOSTS_CONF_FILE_TMP" "$INSTDIR/nginx/$NGINX_CONFIG_NAME.conf" &>/dev/null
@@ -1827,9 +1826,9 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps; then
         listen="${set_host//0.0.0.0/$HOST_LISTEN_ADDR}:$set_port"
         if [ -n "$listen" ]; then
           if [ -n "$type" ]; then
-            printf_cyan "Port $set_service         is mapped to:          $listen/$type"
+            printf_cyan "Port $set_service is mapped to:          $listen/$type"
           else
-            printf_cyan "Port $set_service         is mapped to:          $listen"
+            printf_cyan "Port $set_service is mapped to:          $listen"
           fi
         fi
       fi
