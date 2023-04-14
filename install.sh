@@ -1425,6 +1425,11 @@ if [ -n "$CONTAINER_OPT_PORT_VAR" ]; then
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup ports
+PRETTY_PORT=""
+SET_WEB_PORT_TMP=()
+SET_LISTEN="${HOST_DEFINE_LISTEN//:*/}"
+SET_ADDR="${HOST_LISTEN_ADDR:-127.0.0.1}"
+CONTAINER_WEB_SERVER_LISTEN_ON="${CONTAINER_WEB_SERVER_LISTEN_ON:-}"
 if [ -n "$SET_SERVER_PORTS" ]; then
   SET_LISTEN="${HOST_DEFINE_LISTEN//:*/}"
   for set_port in $SET_SERVER_PORTS; do
