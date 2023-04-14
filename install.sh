@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304141521-git
+##@Version           :  202304141529-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Friday, Apr 14, 2023 15:21 EDT
+# @@Created          :  Friday, Apr 14, 2023 15:29 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -19,7 +19,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304141521-git"
+VERSION="202304141529-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -1451,11 +1451,11 @@ if [ -n "$CONTAINER_ADD_WEB_PORTS" ] || { [ "$CONTAINER_WEB_SERVER_ENABLED" = "y
       proxy_url=""
       proxy_location=""
       proxy_info="$set_port"
-      set_port="${set_port//*|*|/}"
-      set_hostname="${set_port//|*/}"
-      port=${set_port//\/*/}
+      get_port="${set_port//*|*|/}"
+      port=${get_port//\/*/}
       port="${port//*:/}"
       random_port="$(__rport)"
+      set_hostname="${set_port//|*/}"
       SET_WEB_PORT_TMP+=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
       DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port")
       if echo "$proxy_info" | grep -q '[a-zA-Z0-9]|/.*.|[0-9]'; then
