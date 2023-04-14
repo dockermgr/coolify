@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304140845-git
+##@Version           :  202304140906-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Friday, Apr 14, 2023 08:45 EDT
+# @@Created          :  Friday, Apr 14, 2023 09:06 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -19,7 +19,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304140845-git"
+VERSION="202304140906-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -297,7 +297,7 @@ HOST_NGINX_HTTPS_PORT="443"
 HOST_NGINX_UPDATE_CONF="yes"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Enable this if container is running a webserver - [yes/no] [internalPort] [yes/no] [yes/no] [listen]
-CONTAINER_WEB_SERVER_ENABLED="no"
+CONTAINER_WEB_SERVER_ENABLED="yes"
 CONTAINER_WEB_SERVER_INT_PORT="80"
 CONTAINER_WEB_SERVER_SSL_ENABLED="no"
 CONTAINER_WEB_SERVER_AUTH_ENABLED="no"
@@ -1440,7 +1440,7 @@ if [ -n "$CONTAINER_ADD_WEB_PORTS" ] || { [ "$CONTAINER_WEB_SERVER_ENABLED" = "y
       proxy_url=""
       proxy_location=""
       proxy_info="${set_port}"
-      set_port="${set_port//*|/}"
+      set_port="${set_port//*|/|}"
       port=${set_port//\/*/}
       port="${port//*:/}"
       random_port="$(__rport)"
@@ -1449,7 +1449,7 @@ if [ -n "$CONTAINER_ADD_WEB_PORTS" ] || { [ "$CONTAINER_WEB_SERVER_ENABLED" = "y
       if echo "$proxy_info" | grep -q "proxy|"; then
         NGINX_REPLACE_INCLUDE="yes"
         proxy_url="$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port"
-        proxy_location="$(echo "${proxy_info//proxy|/}" | awk -F "|" '{print $1}')"
+        proxy_location="$(echo "${proxy_url//:*/}:${proxy_info//proxy|*|/}")"
         if [ -n "$proxy_url" ] && [ -n "$proxy_location" ]; then
           cat <<EOF | tee -a "$NGINX_VHOSTS_INC_FILE_TMP" &>/dev/null
   location $proxy_location {
