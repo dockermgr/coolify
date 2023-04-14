@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304132310-git
+##@Version           :  202304132320-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Thursday, Apr 13, 2023 23:10 EDT
+# @@Created          :  Thursday, Apr 13, 2023 23:20 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -19,7 +19,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304132310-git"
+VERSION="202304132320-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -1721,7 +1721,8 @@ fi
 if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps; then
   DOCKER_PORTS="$(__trim "${DOCKER_GET_PUBLISH//--publish/}")"
   SET_PORT="$(echo "$DOCKER_PORTS" | tr ' ' '\n' | sort -Vu | grep -vE '^$|--' | grep '^')"
-  if ! grep -sq "$CONTAINER_HOSTNAME" "/etc/hosts" && [ -w "/etc/hosts" ]; then
+  HOSTS_WRITABLE="$(sudoif && sudo bash -c '[ -w "/etc/hosts" ] && echo "true" || false' || echo 'false')"
+  if ! grep -sq "$CONTAINER_HOSTNAME" "/etc/hosts" && [ "$HOSTS_WRITABLE" = "true" ]; then
     if [ -n "$PRETTY_PORT" ]; then
       if [ "$HOST_LISTEN_ADDR" = 'home' ]; then
         echo "$HOST_LISTEN_ADDR        $APPNAME.home" | sudo tee -a "/etc/hosts" &>/dev/null
