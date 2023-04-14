@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304131742-git
+##@Version           :  202304132128-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Thursday, Apr 13, 2023 17:42 EDT
+# @@Created          :  Thursday, Apr 13, 2023 21:28 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -19,7 +19,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304131742-git"
+VERSION="202304132128-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -296,7 +296,7 @@ HOST_NGINX_UPDATE_CONF="yes"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Enable this if container is running a webserver - [yes/no] [internalPort] [yes/no] [yes/no] [listen]
 CONTAINER_WEB_SERVER_ENABLED="yes"
-CONTAINER_WEB_SERVER_INT_PORT="3000"
+CONTAINER_WEB_SERVER_INT_PORT="80"
 CONTAINER_WEB_SERVER_SSL_ENABLED="no"
 CONTAINER_WEB_SERVER_AUTH_ENABLED="no"
 CONTAINER_WEB_SERVER_LISTEN_ON="127.0.0.10"
@@ -304,7 +304,7 @@ CONTAINER_WEB_SERVER_VHOSTS=""
 CONTAINER_WEB_SERVER_CONFIG_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add service port - [port]
-CONTAINER_SERVICE_PORT="9000"
+CONTAINER_SERVICE_PORT="3000,9000"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom port - [port] or [port:port]
 CONTAINER_ADD_CUSTOM_PORT=""
@@ -321,7 +321,7 @@ CONTAINER_EMAIL_RELAY=""
 # Database settings - [listen] [yes/no]
 CONTAINER_DATABASE_LISTEN=""
 CONTAINER_REDIS_ENABLED=""
-CONTAINER_SQLITE3_ENABLED=""
+CONTAINER_SQLITE3_ENABLED="yes"
 CONTAINER_MARIADB_ENABLED=""
 CONTAINER_MONGODB_ENABLED=""
 CONTAINER_COUCHDB_ENABLED=""
@@ -1458,18 +1458,20 @@ if [ -n "$CONTAINER_ADD_CUSTOM_LISTEN" ]; then
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # container web server configuration
-CLEANUP_PORT="${CONTAINER_WEB_SERVER_INT_PORT:-$CONTAINER_SERVICE_PORT}"
-CLEANUP_PORT="${CLEANUP_PORT//\/*/}"
-PRETTY_PORT="$CLEANUP_PORT"
+PRETTY_PORT=""
 SET_WEB_PORT_TMP=()
 if [ "$CONTAINER_WEB_SERVER_ENABLED" = "yes" ] && [ -n "$CONTAINER_WEB_SERVER_INT_PORT" ]; then
   CONTAINER_WEB_SERVER_INT_PORT="${CONTAINER_WEB_SERVER_INT_PORT//,/ }"
-  if [ "$CONTAINER_WEB_SERVER_INT_PORT" != " " ]; then
-    port=${CONTAINER_WEB_SERVER_INT_PORT//\/*/}
-    random_port="$(__rport)"
-    SET_WEB_PORT_TMP=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
-    DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port")
-  fi
+  for set_port in $CONTAINER_WEB_SERVER_INT_PORT; do
+    if [ "$set_port" != " " ] && [ -n "$set_port" ]; then
+      if [ "$set_port" != " " ]; then
+        port=${set_port//\/*/}
+        random_port="$(__rport)"
+        SET_WEB_PORT_TMP=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
+        DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port")
+      fi
+    fi
+  done
 fi
 if [ -n "$CONTAINER_SERVICE_PORT" ]; then
   CONTAINER_SERVICE_PORT="${CONTAINER_SERVICE_PORT//,/ }"
@@ -1513,8 +1515,10 @@ NGINX_PROXY_URL="${NGINX_PROXY_URL:-$PROXY_HTTP_PROTO://$NGINX_PROXY_ADDRESS:$NG
 NGINX_PROXY_URL="${NGINX_PROXY_URL// /}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set temp env for PORTS ENV variable
-DOCKER_SET_PORTS_ENV_TMP="$(echo "$SET_WEB_PORT" | tr ' ' '\n' | grep ':.*.:' | awk -F ':' '{print $1":"$3}' | grep '^')"
-DOCKER_SET_PORTS_ENV_TMP+="$(echo "$SET_WEB_PORT" | tr ' ' '\n' | grep -v ':.*.:' | awk -F ':' '{print $1":"$2}' | grep '^')"
+SET_PORTS_ENV_PUB="${DOCKER_SET_TMP_PUBLISH//--publish/}"
+SET_PORTS_ENV_TMP="${SET_PORTS_ENV_PUB[*]} $SET_WEB_PORT"
+DOCKER_SET_PORTS_ENV_TMP="$(echo "$SET_PORTS_ENV_TMP" | tr ' ' '\n' | grep ':.*.:' | awk -F ':' '{print $1":"$3}' | grep '^')"
+DOCKER_SET_PORTS_ENV_TMP+="$(echo "$SET_PORTS_ENV_TMP" | tr ' ' '\n' | grep -v ':.*.:' | awk -F ':' '{print $1":"$2}' | grep '^')"
 DOCKER_SET_PORTS_ENV_TMP="$(echo "$DOCKER_SET_PORTS_ENV_TMP" | tr ',' '\n' | grep '[0-9]:[0-9]' | sort -u | sed 's|/.*||g' | grep -v '^$' | tr '\n' ',' | grep '^' || echo '')"
 DOCKER_SET_PORTS_ENV="${DOCKER_SET_PORTS_ENV_TMP//,/ }"
 DOCKER_SET_PORTS_ENV="${DOCKER_SET_PORTS_ENV//*:/}"
@@ -1522,8 +1526,8 @@ DOCKER_SET_PORTS_ENV="$(__trim "${DOCKER_SET_PORTS_ENV[*]}")"
 ENV_PORTS="$(echo "$DOCKER_SET_PORTS_ENV" "${CONTAINER_ENV_PORTS[*]}" | tr ' ' '\n' | sort -u)"
 if [ -n "$ENV_PORTS" ]; then
   DOCKER_SET_OPTIONS+=("--env ENV_PORTS=\"$ENV_PORTS\"")
-  unset DOCKER_SET_PORTS_ENV ENV_PORTS
 fi
+unset DOCKER_SET_PORTS_ENV_TMP DOCKER_SET_PORTS_ENV ENV_PORTS SET_PORTS_ENV_TMP SET_PORTS_ENV_PUB
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 DOCKER_CUSTOM_ARRAY="$(__custom_docker_env | grep '\--')"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
