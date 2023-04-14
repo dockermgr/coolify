@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304132216-git
+##@Version           :  202304132232-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Thursday, Apr 13, 2023 22:16 EDT
+# @@Created          :  Thursday, Apr 13, 2023 22:32 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -19,7 +19,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304132216-git"
+VERSION="202304132232-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -1409,21 +1409,6 @@ if [ -n "$CONTAINER_LABELS" ]; then
   label=""
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Setup optional ports
-if [ -n "$CONTAINER_OPT_PORT_VAR" ]; then
-  CONTAINER_OPT_PORT_VAR="${CONTAINER_OPT_PORT_VAR//,/ }"
-  if [ -n "$CONTAINER_OPT_PORT_VAR" ]; then
-    for set_port in $CONTAINER_OPT_PORT_VAR; do
-      if [ "$set_port" != "" ] && [ "$set_port" != " " ]; then
-        port=$set_port
-        echo "$port" | grep -q ':' || port="${port//\/*/}:$port"
-        DOCKER_SET_TMP_PUBLISH+=("--publish $port")
-      fi
-    done
-    set_port=""
-  fi
-fi
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup ports
 PRETTY_PORT=""
 SET_WEB_PORT_TMP=()
@@ -1452,6 +1437,7 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup custom ports
 if [ -n "$CONTAINER_ADD_CUSTOM_LISTEN" ]; then
+  CONTAINER_ADD_CUSTOM_LISTEN="${CONTAINER_ADD_CUSTOM_LISTEN//,/ }"
   for set_port in $CONTAINER_ADD_CUSTOM_LISTEN; do
     if [ "$set_port" != " " ] && [ -n "$set_port" ]; then
       port=${set_port//\/*/}
@@ -1465,6 +1451,26 @@ if [ -n "$CONTAINER_ADD_CUSTOM_LISTEN" ]; then
     fi
   done
   set_port=""
+fi
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Setup optional ports
+if [ -n "$CONTAINER_OPT_PORT_VAR" ]; then
+  CONTAINER_OPT_PORT_VAR="${CONTAINER_OPT_PORT_VAR//,/ }"
+  if [ -n "$CONTAINER_OPT_PORT_VAR" ]; then
+    for set_port in $CONTAINER_OPT_PORT_VAR; do
+      if [ "$set_port" != "" ] && [ "$set_port" != " " ]; then
+        port=${set_port//\/*/}
+        echo "$port" | grep -q ':' || port="$port:$port"
+        TYPE="$(echo "$set_port" | grep '/' | awk -F '/' '{print $NF}' | head -n1 | grep '^' || echo '')"
+        if [ -z "$TYPE" ]; then
+          DOCKER_SET_TMP_PUBLISH+=("--publish $port")
+        else
+          DOCKER_SET_TMP_PUBLISH+=("--publish $port/$TYPE")
+        fi
+      fi
+    done
+    set_port=""
+  fi
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # container web server configuration
@@ -1482,6 +1488,7 @@ if [ "$CONTAINER_WEB_SERVER_ENABLED" = "yes" ] && [ -n "$CONTAINER_WEB_SERVER_IN
     fi
   done
 fi
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if [ -n "$CONTAINER_SERVICE_PORT" ]; then
   CONTAINER_SERVICE_PORT="${CONTAINER_SERVICE_PORT//,/ }"
   for set_port in $CONTAINER_SERVICE_PORT; do
@@ -1498,6 +1505,7 @@ if [ -n "$CONTAINER_SERVICE_PORT" ]; then
     fi
   done
 fi
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 SET_WEB_PORT="${SET_WEB_PORT_TMP[*]}"
 if [ -n "$SET_WEB_PORT" ]; then
   SET_NGINX_PROXY_PORT="$(echo "$SET_WEB_PORT" | tr ' ' '\n' | awk -F':' '{print $1":"$2}' | grep -v '^$' | tr '\n' ' ' | head -n1 | grep '^')"
@@ -1697,7 +1705,7 @@ if [ -w "$NGINX_DIR/vhosts.d" ] && [ -f "$NGINX_CONF_FILE" ]; then
         NGINX_CONF_FILE="$NGINX_DIR/vhosts.d/$NGINX_CONFIG_NAME.conf"
       fi
       if [ -f "/etc/nginx/nginx.conf" ]; then
-        systemctl status nginx | grep -q enabled &>/dev/null && __sudo_root systemctl reload nginx &>/dev/null
+        systemctl status nginx 2>/dev/null | grep -q enabled &>/dev/null && __sudo_root systemctl reload nginx &>/dev/null
       fi
     else
       mv -f "/tmp/$$.$CONTAINER_HOSTNAME.conf" "$INSTDIR/nginx/$NGINX_CONFIG_NAME.conf" &>/dev/null
