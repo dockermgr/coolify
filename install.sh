@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304140126-git
+##@Version           :  202304140139-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Friday, Apr 14, 2023 01:26 EDT
+# @@Created          :  Friday, Apr 14, 2023 01:39 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -19,7 +19,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304140126-git"
+VERSION="202304140139-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -321,7 +321,7 @@ CONTAINER_EMAIL_RELAY=""
 # Database settings - [listen] [yes/no]
 CONTAINER_DATABASE_LISTEN=""
 CONTAINER_REDIS_ENABLED=""
-CONTAINER_SQLITE3_ENABLED=""
+CONTAINER_SQLITE3_ENABLED="yes"
 CONTAINER_MARIADB_ENABLED=""
 CONTAINER_MONGODB_ENABLED=""
 CONTAINER_COUCHDB_ENABLED=""
@@ -1677,7 +1677,7 @@ sleep 10
 __docker_ps && CONTAINER_INSTALLED="true"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Install nginx proxy
-NINGX_VHOSTS_WRITABLE="$(sudoif && sudo bash -c '[ -w "$NGINX_DIR/vhosts.d" ] && echo "true" || false' || echo 'false')"
+NINGX_VHOSTS_WRITABLE="$(sudo -n true && sudo bash -c 'mkdir -p "$NGINX_DIR/vhosts.d";[ -w "$NGINX_DIR/vhosts.d" ] && echo "true" || false' || echo 'false')"
 if [ "$NINGX_VHOSTS_WRITABLE" = "true" ]; then
   NGINX_VHOST_ENABLED="true"
   NGINX_VHOST_NAMES="${CONTAINER_WEB_SERVER_VHOSTS//,/ }"
@@ -1711,16 +1711,14 @@ fi
 # finalize
 if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps; then
   DOCKER_PORTS="$(__trim "${DOCKER_GET_PUBLISH//--publish/}")"
-  SET_PORT="$(echo "$DOCKER_PORTS" | tr ' ' '\n' | sort -Vu | grep -vE '^$|--' | grep '^')"
-  HOSTS_WRITABLE="$(sudoif && sudo bash -c '[ -w "/etc/hosts" ] && echo "true" || false' || echo 'false')"
+  SET_PORT="$(echo "$DOCKER_PORTS" | tr ' ' '\n' | grep -vE '^$|--' | sort -V | grep '^')"
+  HOSTS_WRITABLE="$(sudo -n true && sudo bash -c '[ -w "/etc/hosts" ] && echo "true" || false' || echo 'false')"
   if ! grep -sq "$CONTAINER_HOSTNAME" "/etc/hosts" && [ "$HOSTS_WRITABLE" = "true" ]; then
-    if [ -n "$PRETTY_PORT" ]; then
-      if [ "$HOST_LISTEN_ADDR" = 'home' ]; then
-        echo "$HOST_LISTEN_ADDR        $APPNAME.home" | sudo tee -a "/etc/hosts" &>/dev/null
-      else
-        echo "$HOST_LISTEN_ADDR        $APPNAME.home" | sudo tee -a "/etc/hosts" &>/dev/null
-        echo "$HOST_LISTEN_ADDR        $CONTAINER_HOSTNAME" | sudo tee -a "/etc/hosts" &>/dev/null
-      fi
+    if [ "$HOST_LISTEN_ADDR" = 'home' ]; then
+      echo "$HOST_LISTEN_ADDR        $APPNAME.home" | sudo tee -a "/etc/hosts" &>/dev/null
+    else
+      echo "$HOST_LISTEN_ADDR        $APPNAME.home" | sudo tee -a "/etc/hosts" &>/dev/null
+      echo "$HOST_LISTEN_ADDR        $CONTAINER_HOSTNAME" | sudo tee -a "/etc/hosts" &>/dev/null
     fi
   fi
   printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
