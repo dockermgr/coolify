@@ -1461,12 +1461,13 @@ fi
 CLEANUP_PORT="${CONTAINER_WEB_SERVER_INT_PORT:-$CONTAINER_SERVICE_PORT}"
 CLEANUP_PORT="${CLEANUP_PORT//\/*/}"
 PRETTY_PORT="$CLEANUP_PORT"
+SET_WEB_PORT_TMP=()
 if [ "$CONTAINER_WEB_SERVER_ENABLED" = "yes" ] && [ -n "$CONTAINER_WEB_SERVER_INT_PORT" ]; then
   CONTAINER_WEB_SERVER_INT_PORT="${CONTAINER_WEB_SERVER_INT_PORT//,/ }"
   if [ "$CONTAINER_WEB_SERVER_INT_PORT" != " " ]; then
     port=${CONTAINER_WEB_SERVER_INT_PORT//\/*/}
     random_port="$(__rport)"
-    SET_WEB_PORT="$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port"
+    SET_WEB_PORT_TMP=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
     DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port")
   fi
 fi
@@ -1482,9 +1483,11 @@ if [ -n "$CONTAINER_SERVICE_PORT" ]; then
       else
         DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port/$TYPE")
       fi
+      SET_WEB_PORT_TMP=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
     fi
   done
 fi
+SET_WEB_PORT="${SET_WEB_PORT_TMP[*]}"
 if [ -n "$SET_WEB_PORT" ]; then
   SET_NGINX_PROXY_PORT="$(echo "$SET_WEB_PORT" | tr ' ' '\n' | awk -F':' '{print $1":"$2}' | grep -v '^$' | tr '\n' ' ' | head -n1 | grep '^')"
   CLEANUP_PORT="${SET_NGINX_PROXY_PORT//--publish /}"
