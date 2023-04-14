@@ -292,7 +292,7 @@ CONTAINER_PROTOCOL="http"
 # Setup nginx proxy variables - [yes/no] [yes/no] [http] [https] [yes/no]
 HOST_NGINX_ENABLED="yes"
 HOST_NGINX_SSL_ENABLED="yes"
-HOST_NGINX_HTTP_PORT="80"
+HOST_NGINX_HTTP_PORT="3000"
 HOST_NGINX_HTTPS_PORT="443"
 HOST_NGINX_UPDATE_CONF="yes"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -306,7 +306,7 @@ CONTAINER_WEB_SERVER_VHOSTS=""
 CONTAINER_WEB_SERVER_CONFIG_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add webserver ports - random portmapping - [port,otheport]
-CONTAINER_ADD_WEB_PORTS="80,443,9000"
+CONTAINER_ADD_WEB_PORTS="80,443"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom port - random portmapping -  [exter:inter] or [listen:exter:inter/[tcp,udp]] random:[inter]
 CONTAINER_ADD_CUSTOM_PORT=""
