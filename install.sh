@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304140121-git
+##@Version           :  202304140126-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Friday, Apr 14, 2023 01:21 EDT
+# @@Created          :  Friday, Apr 14, 2023 01:26 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -19,7 +19,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304140121-git"
+VERSION="202304140126-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -304,7 +304,7 @@ CONTAINER_WEB_SERVER_VHOSTS=""
 CONTAINER_WEB_SERVER_CONFIG_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add webserver ports - random portmapping - [port,otheport]
-CONTAINER_ADD_WEB_PORTS="80,9000"
+CONTAINER_ADD_WEB_PORTS="80,443,9000"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom port - random portmapping - [port] or [port:port]
 CONTAINER_ADD_CUSTOM_PORT=""
@@ -321,7 +321,7 @@ CONTAINER_EMAIL_RELAY=""
 # Database settings - [listen] [yes/no]
 CONTAINER_DATABASE_LISTEN=""
 CONTAINER_REDIS_ENABLED=""
-CONTAINER_SQLITE3_ENABLED="yes"
+CONTAINER_SQLITE3_ENABLED=""
 CONTAINER_MARIADB_ENABLED=""
 CONTAINER_MONGODB_ENABLED=""
 CONTAINER_COUCHDB_ENABLED=""
