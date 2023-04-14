@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304141030-git
+##@Version           :  202304141041-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Friday, Apr 14, 2023 10:30 EDT
+# @@Created          :  Friday, Apr 14, 2023 10:41 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -19,7 +19,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304141030-git"
+VERSION="202304141041-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -1450,12 +1450,17 @@ if [ -n "$CONTAINER_ADD_WEB_PORTS" ] || { [ "$CONTAINER_WEB_SERVER_ENABLED" = "y
         NGINX_REPLACE_INCLUDE="yes"
         proxy_info="${proxy_info//proxy|/}"
         proxy_location="${proxy_info//|*/}"
-        proxy_url="$CONTAINER_WEB_SERVER_LISTEN_ON:$port"
+        proxy_url="$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port"
+        if echo "$CONTAINER_PROTOCOL" | grep -q "^http"; then
+          nginx_proto="${CONTAINER_PROTOCOL:-http}"
+        else
+          nginx_proto="http"
+        fi
         if [ -n "$proxy_url" ] && [ -n "$proxy_location" ]; then
           cat <<EOF | tee -a "$NGINX_VHOSTS_INC_FILE_TMP" &>/dev/null
   location $proxy_location {
     proxy_redirect                          http:// https://;
-    proxy_pass                              http://$proxy_url/;
+    proxy_pass                              $nginx_proto://$proxy_url/;
     proxy_ssl_verify                        off;
     proxy_http_version                      1.1;
     proxy_connect_timeout                   3600;
@@ -1528,19 +1533,19 @@ unset DOCKER_SET_PORTS_ENV_TMP ENV_PORTS SET_PORTS_ENV_TMP
 DOCKER_CUSTOM_ARRAY="$(__custom_docker_env | grep '\--')"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Clean up variables
-DOCKER_SET_PUBLISH="$(printf '%s\n' "${DOCKER_SET_TMP_PUBLISH[@]}" | sort -Vu)" # ensure only one
-HUB_IMAGE_URL="$(__trim "${HUB_IMAGE_URL[*]:-}")"                               # image url
-HUB_IMAGE_TAG="$(__trim "${HUB_IMAGE_TAG[*]:-}")"                               # image tag
-DOCKER_GET_CAP="$(__trim "${DOCKER_SET_CAP[*]:-}")"                             # --capabilites
-DOCKER_GET_ENV="$(__trim "${DOCKER_SET_ENV[*]:-}")"                             # --env
-DOCKER_GET_DEV="$(__trim "${DOCKER_SET_DEV[*]:-}")"                             # --device
-DOCKER_GET_MNT="$(__trim "${DOCKER_SET_MNT[*]:-}")"                             # --volume
-DOCKER_GET_LINK="$(__trim "${DOCKER_SET_LINK[*]:-}")"                           # --link
-DOCKER_GET_LABELS="$(__trim "${DOCKER_SET_LABELS[*]:-}")"                       # --labels
-DOCKER_GET_SYSCTL="$(__trim "${DOCKER_SET_SYSCTL[*]:-}")"                       # --sysctl
-DOCKER_GET_OPTIONS="$(__trim "${DOCKER_SET_OPTIONS[*]:-}")"                     # --env
-DOCKER_GET_CUSTOM="$(__trim "${DOCKER_CUSTOM_ARRAY[*]:-}")"                     # --tty --rm --interactive
-DOCKER_GET_PUBLISH="$(__trim "${DOCKER_SET_PUBLISH[*]:-}")"                     # --publish ports
+DOCKER_SET_PUBLISH="$(printf '%s\n' "${DOCKER_SET_TMP_PUBLISH[@]}" | sort -Vu | tr '\n' ' ')" # ensure only one
+HUB_IMAGE_URL="$(__trim "${HUB_IMAGE_URL[*]:-}")"                                             # image url
+HUB_IMAGE_TAG="$(__trim "${HUB_IMAGE_TAG[*]:-}")"                                             # image tag
+DOCKER_GET_CAP="$(__trim "${DOCKER_SET_CAP[*]:-}")"                                           # --capabilites
+DOCKER_GET_ENV="$(__trim "${DOCKER_SET_ENV[*]:-}")"                                           # --env
+DOCKER_GET_DEV="$(__trim "${DOCKER_SET_DEV[*]:-}")"                                           # --device
+DOCKER_GET_MNT="$(__trim "${DOCKER_SET_MNT[*]:-}")"                                           # --volume
+DOCKER_GET_LINK="$(__trim "${DOCKER_SET_LINK[*]:-}")"                                         # --link
+DOCKER_GET_LABELS="$(__trim "${DOCKER_SET_LABELS[*]:-}")"                                     # --labels
+DOCKER_GET_SYSCTL="$(__trim "${DOCKER_SET_SYSCTL[*]:-}")"                                     # --sysctl
+DOCKER_GET_OPTIONS="$(__trim "${DOCKER_SET_OPTIONS[*]:-}")"                                   # --env
+DOCKER_GET_CUSTOM="$(__trim "${DOCKER_CUSTOM_ARRAY[*]:-}")"                                   # --tty --rm --interactive
+DOCKER_GET_PUBLISH="$(__trim "${DOCKER_SET_PUBLISH[*]:-}")"                                   # --publish ports
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 CONTAINER_COMMANDS="$(__trim "${CONTAINER_COMMANDS[*]:-}")" # pass command to container
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
