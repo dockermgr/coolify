@@ -306,7 +306,7 @@ CONTAINER_WEB_SERVER_VHOSTS=""
 CONTAINER_WEB_SERVER_CONFIG_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add webserver ports - random portmapping - [port,otheport] or [proxy|/location|port]
-CONTAINER_ADD_WEB_PORTS="443,admin|/|3000,proxy|/portainer|9000"
+CONTAINER_ADD_WEB_PORTS="443,admin|/|3000"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom port - random portmapping -  [exter:inter] or [listen:exter:inter/[tcp,udp]] random:[inter]
 CONTAINER_ADD_CUSTOM_PORT=""
