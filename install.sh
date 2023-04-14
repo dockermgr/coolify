@@ -1471,7 +1471,7 @@ if [ "$CONTAINER_WEB_SERVER_ENABLED" = "yes" ] && [ -n "$CONTAINER_WEB_SERVER_IN
       if [ "$set_port" != " " ]; then
         port=${set_port//\/*/}
         random_port="$(__rport)"
-        SET_WEB_PORT_TMP=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
+        SET_WEB_PORT_TMP+=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
         DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port")
       fi
     fi
@@ -1489,7 +1489,7 @@ if [ -n "$CONTAINER_SERVICE_PORT" ]; then
       else
         DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_WEB_SERVER_LISTEN_ON:$random_port:$port/$TYPE")
       fi
-      SET_WEB_PORT_TMP=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
+      SET_WEB_PORT_TMP+=("$CONTAINER_WEB_SERVER_LISTEN_ON:$random_port")
     fi
   done
 fi
