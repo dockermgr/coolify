@@ -5,13 +5,13 @@
 # shellcheck disable=SC2155
 # shellcheck disable=SC2199
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304151949-git
+##@Version           :  202304151958-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Saturday, Apr 15, 2023 19:49 EDT
+# @@Created          :  Saturday, Apr 15, 2023 19:58 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -23,7 +23,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304151949-git"
+VERSION="202304151958-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -609,7 +609,6 @@ exit 0
 EOF
   [ -f "$DOCKERMGR_INSTALL_SCRIPT" ] || return 1
   chmod -Rf 755 "$DOCKERMGR_INSTALL_SCRIPT"
-  sed -i "s|$HUB_IMAGE_URL:$HUB_IMAGE_TAG|\\\\\n  $HUB_IMAGE_URL:$HUB_IMAGE_TAG $CONTAINER_COMMANDS|g" "$DOCKERMGR_INSTALL_SCRIPT" 2>/dev/null
 }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # import variables from a file
