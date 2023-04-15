@@ -5,13 +5,13 @@
 # shellcheck disable=SC2155
 # shellcheck disable=SC2199
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304151851-git
+##@Version           :  202304151925-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Saturday, Apr 15, 2023 18:51 EDT
+# @@Created          :  Saturday, Apr 15, 2023 19:25 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -23,7 +23,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304151851-git"
+VERSION="202304151925-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -329,11 +329,12 @@ CONTAINER_COUCHDB_ENABLED=""
 CONTAINER_POSTGRES_ENABLED=""
 CONTAINER_SUPABASE_ENABLED=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Custom database setup - [yes/no] [mysql] [port/directory] [/data/db/$CONTAINER_CUSTOM_DATABASE_NAME]
+# Custom database setup - [yes/no] [mysql] [port/directory] [/data/db/$CONTAINER_CUSTOM_DATABASE_NAME] [msql]
 CONTAINER_CUSTOM_DATABASE_ENABLED=""
 CONTAINER_CUSTOM_DATABASE_NAME=""
 CONTAINER_CUSTOM_DATABASE_PORT=""
 CONTAINER_CUSTOM_DATABASE_DIR=""
+CONTAINER_CUSTOM_DATABASE_PROTOCOL=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Database root user - [user] [pass/random]
 CONTAINER_DATABASE_USER_ROOT=""
@@ -592,7 +593,7 @@ __test_public_reachable() {
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __create_docker_script() {
   [ -n "$EXECUTE_DOCKER_CMD" ] || return
-  cat <<EOF | sed 's|--|\n  --|g' | grep -v '^$' | sed '/^  --/ s/$/ \\/' | grep '^' >"$DOCKERMGR_INSTALL_SCRIPT"
+  cat <<EOF | sed 's/ --/\n  --/g;s| -d| -d \\|g' | grep -v '^$' | grep '^' >"$DOCKERMGR_INSTALL_SCRIPT"
 #!/usr/bin/env bash
 # Install script for $CONTAINER_NAME
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -600,7 +601,7 @@ $EXECUTE_PRE_INSTALL
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 $EXECUTE_DOCKER_CMD
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-docker ps -a 2>&1 | grep -q "$CONTAINER_NAME" || { echo "$CONTAINER_NAME ist not running" && exit 1; }
+docker ps -a 2>&1 | grep -q "$CONTAINER_NAME" || { echo "$CONTAINER_NAME is not running" >&2 && exit 1; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 exit 0
 # end script
@@ -1190,9 +1191,10 @@ if [ "$CONTAINER_CUSTOM_DATABASE_ENABLED" = "yes" ] && [ -n "$CONTAINER_CUSTOM_D
   DATABASE_DIR_CUSTOM="${CONTAINER_CUSTOM_DATABASE_DIR:-$DATABASE_BASE_DIR/$CONTAINER_CUSTOM_DATABASE_NAME}"
   DOCKER_SET_OPTIONS+=("--volume $LOCAL_DATA_DIR/db/$DATABASE_DIR_CUSTOM:/$DATABASE_DIR_CUSTOM:z")
   DOCKER_SET_OPTIONS+=("--env DATABASE_DIR_CUSTOM=$DATABASE_DIR_CUSTOM")
+  CONTAINER_CUSTOM_DATABASE_PROTOCOL="${CONTAINER_CUSTOM_DATABASE_PROTOCOL:-file}"
   if echo "$CONTAINER_CUSTOM_DATABASE_PORT" | grep -q "^[0-9][0-9]"; then
     DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_DATABASE_LISTEN:$CONTAINER_CUSTOM_DATABASE_PORT:$CONTAINER_CUSTOM_DATABASE_PORT")
-    CONTAINER_DATABASE_PROTO="$HOST_LISTEN_ADDR:$CONTAINER_CUSTOM_DATABASE_PORT"
+    CONTAINER_DATABASE_PROTO="$CONTAINER_CUSTOM_DATABASE_PROTOCOL://$HOST_LISTEN_ADDR:$CONTAINER_CUSTOM_DATABASE_PORT"
   else
     CONTAINER_DATABASE_PROTO="file:///$DATABASE_DIR_CUSTOM/"
   fi
@@ -1682,7 +1684,7 @@ DOCKER_GET_PUBLISH="$(__trim "${DOCKER_SET_PUBLISH[*]:-}")"                     
 CONTAINER_COMMANDS="$(__trim "${CONTAINER_COMMANDS[*]:-}")"                                   # pass command to container
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # set docker commands - script creation - execute command
-SET_EXECUTE_PRE_INSTALL="$(echo "docker stop $CONTAINER_NAME >/dev/null 2>&1;docker rm -f $CONTAINER_NAME >/dev/null 2>&1;docker pull $HUB_IMAGE_URL:$HUB_IMAGE_TAG >/dev/null 2>&1 || { echo \"Failed to pull $HUB_IMAGE_URL:$HUB_IMAGE_TAG\" >&2 && exit 1; }")"
+SET_EXECUTE_PRE_INSTALL="$(echo "docker stop $CONTAINER_NAME;docker rm -f $CONTAINER_NAME;docker pull $HUB_IMAGE_URL:$HUB_IMAGE_TAG || { echo \"Failed to pull $HUB_IMAGE_URL:$HUB_IMAGE_TAG\" >&2 && exit 1; }")"
 SET_EXECUTE_DOCKER_CMD="$(echo "docker run -d $DOCKER_GET_OPTIONS $DOCKER_GET_CUSTOM $DOCKER_GET_LINK $DOCKER_GET_LABELS $DOCKER_GET_CAP $DOCKER_GET_SYSCTL $DOCKER_GET_DEV $DOCKER_GET_MNT $DOCKER_GET_ENV $DOCKER_GET_PUBLISH $HUB_IMAGE_URL:$HUB_IMAGE_TAG $CONTAINER_COMMANDS || { echo \"Failed to create $CONTAINER_NAME\" >&2 && exit 1; }")"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Run functions
