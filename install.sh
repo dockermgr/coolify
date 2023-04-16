@@ -5,13 +5,13 @@
 # shellcheck disable=SC2155
 # shellcheck disable=SC2199
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304160933-git
+##@Version           :  202304161003-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Sunday, Apr 16, 2023 09:33 EDT
+# @@Created          :  Sunday, Apr 16, 2023 10:03 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -23,7 +23,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304160933-git"
+VERSION="202304161003-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -316,7 +316,7 @@ CONTAINER_WEB_SERVER_VHOSTS="*."
 CONTAINER_ADD_WEB_PORTS="443,admin|/|3000"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom port - random portmapping -  [exter:inter] or [listen:exter:inter/[tcp,udp]] random:[inter]
-CONTAINER_ADD_CUSTOM_PORT="0.0.0.0:49000-49100:9000-9100"
+CONTAINER_ADD_CUSTOM_PORT="49000-49100:9000-9100"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mail settings - [yes/no] [user] [domainname] [server]
 CONTAINER_EMAIL_ENABLED=""
@@ -1979,31 +1979,31 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   fi
   if [ -n "$CONTAINER_USER_NAME" ]; then
-    MESSAGE="true"
+    show_user_footer="true"
     printf_cyan "Username is:                            $CONTAINER_USER_NAME"
   fi
   if [ -n "$CONTAINER_USER_PASS" ]; then
-    MESSAGE="true"
+    show_user_footer="true"
     printf_blue "Password is:                            $CONTAINER_USER_PASS"
   fi
   if [ "$CONTAINER_DATABASE_USER_ROOT" ]; then
-    MESSAGE="true"
+    show_user_footer="true"
     printf_blue "Database root user:                     $CONTAINER_DATABASE_USER_ROOT"
   fi
   if [ "$CONTAINER_DATABASE_PASS_ROOT" ]; then
-    MESSAGE="true"
+    show_user_footer="true"
     printf_blue "Database root password:                 $CONTAINER_DATABASE_PASS_ROOT"
   fi
   if [ "$CONTAINER_DATABASE_USER_NORMAL" ]; then
-    MESSAGE="true"
+    show_user_footer="true"
     printf_blue "Database user:                          $CONTAINER_DATABASE_USER_NORMAL"
   fi
   if [ "$CONTAINER_DATABASE_PASS_NORMAL" ]; then
-    MESSAGE="true"
+    show_user_footer="true"
     printf_blue "Database password:                     $CONTAINER_DATABASE_PASS_NORMAL"
   fi
+  [ "$show_user_footer" = "true" ] && printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   if [ "$SHOW_DATABASE_INFO" = "true" ]; then
-    MESSAGE="true"
     printf_yellow "Database is running on:                 $CONTAINER_DATABASE_PROTO"
     if [ -n "$MESSAGE_CONTAINER_DATABASE" ]; then
       printf_cyan "$MESSAGE_CONTAINER_DATABASE"
