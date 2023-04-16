@@ -311,7 +311,7 @@ CONTAINER_WEB_SERVER_CONFIG_NAME=""
 CONTAINER_ADD_WEB_PORTS="443,admin|/|3000"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom port - random portmapping -  [exter:inter] or [listen:exter:inter/[tcp,udp]] random:[inter]
-CONTAINER_ADD_CUSTOM_PORT=""
+CONTAINER_ADD_CUSTOM_PORT="49000-49100:9000-9100"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mail settings - [yes/no] [user] [domainname] [server]
 CONTAINER_EMAIL_ENABLED=""
