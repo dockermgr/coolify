@@ -5,13 +5,13 @@
 # shellcheck disable=SC2155
 # shellcheck disable=SC2199
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304160433-git
+##@Version           :  202304160452-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Sunday, Apr 16, 2023 04:33 EDT
+# @@Created          :  Sunday, Apr 16, 2023 04:52 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -23,7 +23,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304160433-git"
+VERSION="202304160452-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -307,7 +307,7 @@ CONTAINER_WEB_SERVER_AUTH_ENABLED="no"
 CONTAINER_WEB_SERVER_LISTEN_ON="127.0.0.10"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Specify custom nginx vhosts - autoconfigure: [*./name.all/name.mydomain/name.myhostname] - [virtualhost,othervhostdom]
-CONTAINER_WEB_SERVER_VHOSTS=""
+CONTAINER_WEB_SERVER_VHOSTS="*."
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add webserver ports - random portmapping - [port,otheport] or [proxy|/location|port]
 CONTAINER_ADD_WEB_PORTS="443,admin|/|3000"
@@ -611,6 +611,8 @@ EOF
   [ -f "$DOCKERMGR_INSTALL_SCRIPT" ] || return 1
   chmod -Rf 755 "$DOCKERMGR_INSTALL_SCRIPT"
 }
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+__printf_color() { printf_color "$2\n" "$1"; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # import variables from a file
 [ -f "$INSTDIR/env.sh" ] && . "$INSTDIR/env.sh"
@@ -1875,16 +1877,16 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
   printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   if [ "$HOSTS_WRITABLE" = "true" ]; then
     if [ "$HOST_LISTEN_ADDR" = 'home' ]; then
-      printf_color "Adding $HOST_LISTEN_ADDR        $APPNAME.home to /etc/hosts\n" "44"
+      __printf_color "44" "Adding $HOST_LISTEN_ADDR        $APPNAME.home to /etc/hosts"
       if ! grep -sq "$HOST_LISTEN_ADDR.* $APPNAME.home" "/etc/hosts"; then
         echo "$HOST_LISTEN_ADDR        $APPNAME.home" | sudo tee -a "/etc/hosts" &>/dev/null
       fi
     else
-      printf_color "Adding $HOST_LISTEN_ADDR        $APPNAME.home to /etc/hosts\n" "44"
+      __printf_color "44" "Adding $HOST_LISTEN_ADDR        $APPNAME.home to /etc/hosts"
       if ! grep -sq "$HOST_LISTEN_ADDR.* $APPNAME.home" "/etc/hosts"; then
         echo "$HOST_LISTEN_ADDR        $APPNAME.home" | sudo tee -a "/etc/hosts" &>/dev/null
       fi
-      printf_color "Adding $HOST_LISTEN_ADDR        $CONTAINER_HOSTNAME to /etc/hosts\m" "44"
+      __printf_color "44" "Adding $HOST_LISTEN_ADDR        $CONTAINER_HOSTNAME to /etc/hosts"
       if ! grep -sq "$HOST_LISTEN_ADDR.* $CONTAINER_HOSTNAME" "/etc/hosts"; then
         echo "$HOST_LISTEN_ADDR        $CONTAINER_HOSTNAME" | sudo tee -a "/etc/hosts" &>/dev/null
       fi
@@ -1894,8 +1896,10 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
       NGINX_VHOST_NAMES="${NGINX_VHOST_NAMES//,/ }"
       for vhost in $NGINX_VHOST_NAMES; do
         if ! grep -sq "$CONTAINER_WEB_SERVER_LISTEN_ON.* $vhost" "/etc/hosts"; then
-          printf_color "Adding $CONTAINER_WEB_SERVER_LISTEN_ON        $vhost to /etc/hosts\n" "44"
-          echo "$CONTAINER_WEB_SERVER_LISTEN_ON        $vhost" | sudo tee -a "/etc/hosts" &>/dev/null
+          if echo "$vhost" | grep -qFv '*'; then
+            __printf_color "44" "Adding $CONTAINER_WEB_SERVER_LISTEN_ON        $vhost to /etc/hosts"
+            echo "$CONTAINER_WEB_SERVER_LISTEN_ON        $vhost" | sudo tee -a "/etc/hosts" &>/dev/null
+          fi
         fi
       done
       show_hosts_messge_banner="true"
