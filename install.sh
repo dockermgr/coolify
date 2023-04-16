@@ -5,13 +5,13 @@
 # shellcheck disable=SC2155
 # shellcheck disable=SC2199
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202304151958-git
+##@Version           :  202304152232-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Saturday, Apr 15, 2023 19:58 EDT
+# @@Created          :  Saturday, Apr 15, 2023 22:32 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for coolify
 # @@Changelog        :  New script
@@ -23,7 +23,7 @@
 # @@Template         :  installers/dockermgr
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="coolify"
-VERSION="202304151958-git"
+VERSION="202304152232-git"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${SUDO_USER:-$USER}"
@@ -311,7 +311,7 @@ CONTAINER_WEB_SERVER_CONFIG_NAME=""
 CONTAINER_ADD_WEB_PORTS="443,admin|/|3000"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom port - random portmapping -  [exter:inter] or [listen:exter:inter/[tcp,udp]] random:[inter]
-CONTAINER_ADD_CUSTOM_PORT="49000-49100:9000-9100"
+CONTAINER_ADD_CUSTOM_PORT="49000-49100:9000:9100"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mail settings - [yes/no] [user] [domainname] [server]
 CONTAINER_EMAIL_ENABLED=""
@@ -1988,13 +1988,11 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps; then
         fi
         listen="${set_host//0.0.0.0/$HOST_LISTEN_ADDR}:$set_port"
         characters=${#set_service}
-        spacing=$((20 - characters))
+        spacing=$((31 - 12 - characters))
+        [ -n "$listen" ] && set_listen="$listen/$type" || set_listen="$listen"
+        set_listen=$(printf "%-${spacing}s" "" "$set_listen")
         if [ -n "$listen" ]; then
-          if [ -n "$type" ]; then
-            printf_cyan "Port $set_service is mapped to:            $listen/$type"
-          else
-            printf_cyan "Port $set_service is mapped to:            $listen"
-          fi
+          printf_cyan "Port $set_service is mapped to:            $set_listen"
         fi
       fi
     done
